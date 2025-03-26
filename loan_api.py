@@ -9,6 +9,9 @@ from pydantic import BaseModel
 model = joblib.load("loan_default_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
+# Define expected feature names
+FEATURE_NAMES = ["age", "income", "loan_amount", "credit_score"]
+
 # Initialize FastAPI app
 app = FastAPI(title="Loan Default Prediction API", description="Predicts loan default probability", version="1.0")
 
@@ -26,22 +29,23 @@ def home():
 
 # Define prediction route
 @app.post("/predict/")
-def predict_default(data: LoanInput):
+async def predict_default(application: LoanApplication):
     try:
-        # Convert input data to a NumPy array
-        input_data = np.array([[data.age, data.income, data.loan_amount, data.credit_score]])
+        # Convert input to DataFrame with column names
+        input_data = pd.DataFrame([[application.age, application.income, application.loan_amount, application.credit_score]], 
+                                  columns=FEATURE_NAMES)
 
-        # Standardize input data using the saved scaler
-        input_scaled = scaler.transform(input_data)
+        # Scale the input
+        scaled_data = scaler.transform(input_data)
 
-        # Predict the probability of loan default
-        probability = model.predict_proba(input_scaled)[:, 1][0]
+        # Predict probability
+        probability = model.predict_proba(scaled_data)[0][1]
 
-        return {"loan_default_probability": round(float(probability), 4)}
-    
+        return {"loan_default_probability": round(float(probability), 2)}
+
     except Exception as e:
         return {"error": str(e)}
-
+        
 # Run the API with Uvicorn
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
