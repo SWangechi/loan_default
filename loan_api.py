@@ -5,6 +5,13 @@ import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+# Define request data format
+class LoanApplication(BaseModel):
+    age: int
+    income: float
+    loan_amount: float
+    credit_score: int
+
 # Load the trained model and scaler
 model = joblib.load("loan_default_model.pkl")
 scaler = joblib.load("scaler.pkl")
@@ -14,13 +21,6 @@ FEATURE_NAMES = ["age", "income", "loan_amount", "credit_score"]
 
 # Initialize FastAPI app
 app = FastAPI(title="Loan Default Prediction API", description="Predicts loan default probability", version="1.0")
-
-# Define request data format
-class LoanInput(BaseModel):
-    age: int
-    income: float
-    loan_amount: float
-    credit_score: int
 
 # Define home route
 @app.get("/")
